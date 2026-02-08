@@ -1,0 +1,260 @@
+{
+  "meta": {
+    "title": "V8 Internals Assessment",
+    "subtitle": "Node.js Performance Engineering — Modules 1.1, 1.2 & 1.3",
+    "estimatedTime": "45–60 minutes",
+    "description": "Test your knowledge of V8's compilation pipeline, hidden classes, inline caching, and memory model. 19 questions across multiple-choice, code analysis, and short answer.",
+    "author": "{{AUTHOR_NAME}}",
+    "logoUrl": "{{LOGO_URL}}",
+    "socialLinks": {
+      "youtube": "{{YOUTUBE_URL}}",
+      "linkedin": "{{LINKEDIN_URL}}",
+      "substack": "{{SUBSTACK_URL}}"
+    }
+  },
+  "sections": [
+    {
+      "id": "section-a",
+      "title": "Section A: Multiple Choice",
+      "instruction": "Choose the single best answer for each question.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "text": "A JavaScript function is called for the first time. Which V8 component executes it?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "TurboFan" },
+            { "key": "b", "text": "Sparkplug" },
+            { "key": "c", "text": "Ignition" },
+            { "key": "d", "text": "Maglev" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "V8 always starts by parsing source code into an AST, then Ignition compiles it to bytecode. First execution is always interpreted by Ignition. TurboFan and Maglev only kick in after the function has been called enough times to be considered \"hot.\""
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "text": "What primarily triggers V8 to promote a function from Ignition bytecode to TurboFan optimised machine code?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "The function contains complex logic" },
+            { "key": "b", "text": "The function is called repeatedly with consistent types" },
+            { "key": "c", "text": "The function uses async/await" },
+            { "key": "d", "text": "The function is exported from a module" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "V8 uses type feedback collected during interpretation. When a function is called many times and the types remain stable (e.g., always receives numbers), V8 has enough confidence to generate specialised machine code. Inconsistent types reduce this confidence."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "text": "A function has been optimised by TurboFan. It then receives an argument of an unexpected type. What happens?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "V8 throws a TypeError" },
+            { "key": "b", "text": "V8 ignores the type mismatch and continues" },
+            { "key": "c", "text": "V8 deoptimises the function back to a lower tier" },
+            { "key": "d", "text": "V8 recompiles a new optimised version immediately" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "TurboFan generates code based on type assumptions. When those assumptions are violated, V8 must \"bail out\" — deoptimise the function back to Ignition bytecode so it can handle the unexpected type correctly. This is expensive and should be avoided in hot paths."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "text": "Two objects are created. Which statement about their hidden classes is correct?",
+          "codeSnippet": "const a = { x: 1, y: 2 };\nconst b = { x: 10, y: 20 };",
+          "options": [
+            { "key": "a", "text": "They have different hidden classes because their values differ" },
+            { "key": "b", "text": "They share the same hidden class because properties are added in the same order" },
+            { "key": "c", "text": "They share the same hidden class only if created by the same constructor" },
+            { "key": "d", "text": "Hidden classes are not used for object literals" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "Hidden classes (shapes/maps) are determined by the property names and the order they are added — not by the values. Since both `a` and `b` have `x` then `y` added in the same order, they share the same hidden class transition chain."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "text": "A function receives objects with 6 different shapes over its lifetime. What is the inline cache state for that call site?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "Monomorphic" },
+            { "key": "b", "text": "Polymorphic" },
+            { "key": "c", "text": "Megamorphic" },
+            { "key": "d", "text": "Dictionary mode" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "Monomorphic = 1 shape, Polymorphic = 2–4 shapes, Megamorphic = 5+ shapes. With 6 different shapes, the inline cache has gone megamorphic, meaning V8 falls back to a slower generic property lookup (hash table) instead of the fast cached lookup."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "text": "Which of these values is stored as a SMI (Small Integer) in V8?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "3.14" },
+            { "key": "b", "text": "Date.now()" },
+            { "key": "c", "text": "256" },
+            { "key": "d", "text": "NaN" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "`256` is a small whole number well within the SMI range (~±1 billion). `3.14` is a float (HeapNumber), `Date.now()` returns a timestamp in the trillions (HeapNumber), and `NaN` is a special floating-point value (HeapNumber)."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "text": "On a 64-bit system with V8's pointer compression, how many bits are available for the actual integer value in a SMI?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "63 bits" },
+            { "key": "b", "text": "32 bits" },
+            { "key": "c", "text": "31 bits" },
+            { "key": "d", "text": "30 bits" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "With pointer compression, V8 uses 32-bit value slots. 1 bit is the SMI/pointer tag. The remaining 31 bits hold the signed integer value, giving a range of roughly -1 billion to +1 billion."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "text": "What does V8 use the least significant bit of a value for?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "Determining if the value is positive or negative" },
+            { "key": "b", "text": "Distinguishing between a SMI and a pointer to a heap object" },
+            { "key": "c", "text": "Tracking whether the value has been garbage collected" },
+            { "key": "d", "text": "Marking the value as optimised" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "The least significant bit (LSB) is V8's tag bit. If it's `1`, the value is a SMI with the integer encoded in the remaining bits. If it's `0`, the value is a pointer to an object on the heap."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "text": "Which compilation tier did V8 introduce to bridge the gap between Ignition and TurboFan with moderate optimisation at lower cost?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "Sparkplug" },
+            { "key": "b", "text": "Crankshaft" },
+            { "key": "c", "text": "Maglev" },
+            { "key": "d", "text": "Liftoff" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "Maglev is V8's mid-tier optimising compiler, sitting between Sparkplug (a thin baseline compiler that generates non-optimised native code from bytecode) and TurboFan (the full optimising compiler). Maglev provides meaningful optimisation at a lower compilation cost than TurboFan."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "text": "An object starts with a fast hidden class but then has many properties dynamically added and deleted. V8 may transition this object to:",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "Megamorphic mode" },
+            { "key": "b", "text": "Polymorphic mode" },
+            { "key": "c", "text": "Dictionary mode" },
+            { "key": "d", "text": "Frozen mode" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "When objects have properties frequently added and deleted dynamically, V8 abandons the fast hidden class structure and transitions the object to dictionary mode (hash table-based property storage). This is slower for property access but more efficient for highly dynamic shapes."
+        }
+      ]
+    },
+    {
+      "id": "section-b",
+      "title": "Section B: Code Analysis",
+      "instruction": "For each code snippet, explain what V8 is doing internally. Show your reasoning.",
+      "questions": [
+        {
+          "id": "q11",
+          "type": "code_analysis",
+          "text": "Analyse the following code. Will both functions be optimised by TurboFan equally well? Explain why or why not.",
+          "codeSnippet": "function addClean(a, b) {\n  return a + b;\n}\n\nfunction addMessy(a, b) {\n  return a + b;\n}\n\n// Hot loop — thousands of calls\nfor (let i = 0; i < 10000; i++) {\n  addClean(i, i + 1);\n}\n\nfor (let i = 0; i < 10000; i++) {\n  if (i === 9999) {\n    addMessy(i, \"surprise\");\n  } else {\n    addMessy(i, i + 1);\n  }\n}",
+          "modelAnswer": "`addClean` will be optimised well by TurboFan. It receives consistent types (numbers) across all 10,000 calls, so V8 collects stable type feedback and generates specialised integer addition code.\n\n`addMessy` will likely be optimised *and then deoptimised*. For the first 9,999 calls, V8 sees numbers and may optimise. On the last call, it receives a string as the second argument. This violates the type assumption, triggering a deoptimisation. Depending on timing, TurboFan may have already compiled it with the assumption of number addition — the string forces a bailout. Even though it's just one call, the deopt has a real cost and the function may be recompiled with less aggressive optimisations.",
+          "explanation": "The key concept here is **type stability**. TurboFan optimises based on type feedback collected during interpretation. Consistent types → confident optimisation. Mixed types → deoptimisation or less aggressive compilation."
+        },
+        {
+          "id": "q12",
+          "type": "code_analysis",
+          "text": "Look at the following object creation patterns. Which one is more efficient in V8, and why? Be specific about the internal mechanism affected.",
+          "codeSnippet": "// Pattern A\nfunction createUserA(name, age) {\n  const user = {};\n  user.name = name;\n  user.age = age;\n  return user;\n}\n\n// Pattern B\nfunction createUserB(name, age) {\n  const user = {};\n  if (age) {\n    user.age = age;\n    user.name = name;\n  } else {\n    user.name = name;\n  }\n  return user;\n}",
+          "modelAnswer": "Pattern A is more efficient. It always adds properties in the same order: `name` then `age`. Every object produced shares the same hidden class transition chain, enabling monomorphic inline caching at call sites.\n\nPattern B adds properties in different orders depending on whether `age` is truthy. Objects where `age` exists go through `age → name`, while objects where `age` is falsy go through `name` only. This creates different hidden classes. Any function that later receives objects from both branches sees multiple shapes, pushing inline caches toward polymorphic or megamorphic states.",
+          "explanation": "The internal mechanism affected is **hidden class transitions** and consequently **inline cache polymorphism**. Consistent property addition order = shared hidden classes = monomorphic ICs = fast property access."
+        },
+        {
+          "id": "q13",
+          "type": "code_analysis",
+          "text": "What is the memory representation difference between these three variables? Which is cheapest and which is most expensive for V8 to store? Explain the mechanism for each.",
+          "codeSnippet": "let a = 42;\nlet b = 42.5;\nlet c = 9007199254740991; // Number.MAX_SAFE_INTEGER",
+          "modelAnswer": "- `a = 42`: Stored as a **SMI**. The value is encoded directly in the tagged pointer — no heap allocation. This is the cheapest representation.\n- `b = 42.5`: Stored as a **HeapNumber**. The float cannot be encoded as a SMI, so V8 allocates a small object on the heap to hold the 64-bit IEEE 754 floating-point value. This requires heap allocation and will eventually need garbage collection.\n- `c = 9007199254740991`: Stored as a **HeapNumber**. Although it's a whole number, it far exceeds the SMI range (~±1 billion), so it must be heap-allocated just like the float. Cost is equivalent to `b`.",
+          "explanation": "SMIs are the cheapest — they're encoded directly in the pointer with zero heap allocation. HeapNumbers require heap allocation and GC overhead. The key insight is that even whole numbers can become HeapNumbers if they exceed the SMI range."
+        },
+        {
+          "id": "q14",
+          "type": "code_analysis",
+          "text": "A developer writes this function to process incoming request data. It is called from two different API endpoints. A performance profiler shows `processItem` is slower than expected. What is the likely V8-internal reason, and how would you fix it?",
+          "codeSnippet": "function processItem(item) {\n  return item.price * item.quantity;\n}\n\n// Endpoint A\napp.get('/orders', () => {\n  orders.forEach(o => processItem({ price: o.price, quantity: o.qty }));\n});\n\n// Endpoint B\napp.get('/inventory', () => {\n  inventory.forEach(i => processItem({ quantity: i.stock, price: i.cost }));\n});",
+          "modelAnswer": "The likely cause is **different hidden classes due to property order**. Endpoint A creates objects with `{ price, quantity }` (price first), while Endpoint B creates objects with `{ quantity, price }` (quantity first). These produce different hidden classes. Since `processItem` receives both shapes, the inline cache for `item.price` and `item.quantity` goes polymorphic (or megamorphic if there are other callers).\n\n**Fix:** Ensure all call sites create objects with properties in the same order:\n```js\n// Both endpoints:\nprocessItem({ price: value, quantity: value });\n```",
+          "explanation": "Property order determines hidden class identity. When the same function receives objects with different hidden classes, inline caches degrade from monomorphic to polymorphic/megamorphic, slowing down property access."
+        },
+        {
+          "id": "q15",
+          "type": "code_analysis",
+          "text": "A developer writes a high-frequency metrics counter. After the service runs for several months handling millions of requests, could this have a hidden performance cost related to V8's memory model? Explain your reasoning.",
+          "codeSnippet": "let requestCount = 0;\n\nfunction onRequest() {\n  requestCount++;\n  // ... handle request\n}",
+          "modelAnswer": "Yes, there is a hidden cost. `requestCount` starts as a SMI (value `0`, tagged integer). It remains a SMI as it increments through millions of values. However, once it exceeds the SMI range (~1.07 billion), V8 must transition it to a HeapNumber. From that point, every increment allocates a new HeapNumber on the heap (since HeapNumbers are immutable — each new value needs a new allocation). In an extremely high-frequency counter, this creates ongoing GC pressure that didn't exist when the value was in SMI range. A practical fix would be to periodically reset the counter or use BigInt with awareness of its own costs.",
+          "explanation": "The transition from SMI to HeapNumber is the critical moment. Before that point, increments are essentially free (no allocation). After it, every single increment allocates a new heap object, creating sustained GC pressure."
+        }
+      ]
+    },
+    {
+      "id": "section-c",
+      "title": "Section C: Short Answer",
+      "instruction": "Answer in 2–5 sentences each.",
+      "questions": [
+        {
+          "id": "q16",
+          "type": "short_answer",
+          "text": "Explain the relationship between On-Stack Replacement (OSR) and V8's tiered compilation. Why is OSR necessary — why can't V8 simply wait until the next function call to use optimised code?",
+          "codeSnippet": null,
+          "modelAnswer": "OSR (On-Stack Replacement) allows V8 to switch from interpreted bytecode to optimised machine code *while a function is still running* — specifically mid-loop. This is necessary because some functions contain long-running loops. Without OSR, a function running a loop for millions of iterations would have to complete entirely in the interpreter before the optimised version could be used on the *next* call. OSR lets the currently executing loop benefit from optimisation immediately rather than waiting.",
+          "explanation": "Without OSR, long-running loops would never benefit from optimisation during their current execution — only future calls would see the improvement."
+        },
+        {
+          "id": "q17",
+          "type": "short_answer",
+          "text": "A colleague says: \"I always define my object properties in alphabetical order for V8 performance.\" Is this good advice? Explain what actually matters and why.",
+          "codeSnippet": null,
+          "modelAnswer": "Alphabetical order is not what matters. What matters is **consistency** — all objects of the same \"type\" should have properties added in the **same** order. The specific order (alphabetical or not) is irrelevant. What creates different hidden classes is when objects that are used together in the same code paths have properties added in *different* orders. The advice should be: \"Pick a consistent order and stick with it across your codebase,\" not \"use alphabetical order.\"",
+          "explanation": "Hidden classes are determined by property addition order, not alphabetical order. Consistency across all creation sites is what enables monomorphic inline caching."
+        },
+        {
+          "id": "q18",
+          "type": "short_answer",
+          "text": "Explain why the cost of a HeapNumber matters in a hot loop but is negligible in a cold path. Reference what happens at the garbage collection level.",
+          "codeSnippet": null,
+          "modelAnswer": "A single HeapNumber allocation is tiny — a few bytes and a few nanoseconds. In a cold path (code that runs rarely), one or two HeapNumbers are invisible in the overall performance profile. But in a hot loop running millions of iterations, each iteration potentially allocates a new HeapNumber. These accumulate rapidly, filling the young generation heap space and triggering frequent Scavenge GC cycles. Each GC cycle pauses execution briefly, and the cumulative effect of millions of allocations plus frequent GC adds up to measurable latency.",
+          "explanation": "It's a volume problem. One HeapNumber is trivial. Millions of HeapNumbers in a tight loop fill the young generation rapidly, triggering frequent Scavenge pauses that add up."
+        },
+        {
+          "id": "q19",
+          "type": "short_answer",
+          "text": "A junior developer asks you: \"If TurboFan makes code so much faster, why doesn't V8 just use TurboFan for everything from the start?\" Give a clear explanation.",
+          "codeSnippet": null,
+          "modelAnswer": "TurboFan produces fast code but is itself *slow to compile*. It performs expensive analyses — type specialisation, inlining, dead code elimination, register allocation — that take significant time. If V8 used TurboFan for every function from the start, application startup would be extremely slow because the compiler would spend time optimising code that might only run once. The tiered approach (Ignition → Sparkplug → Maglev → TurboFan) means code runs immediately (interpreted), and V8 only invests in expensive optimisation for functions that are called frequently enough to justify the compilation cost. This is a startup time vs peak performance tradeoff.",
+          "explanation": "It's the classic tradeoff: fast startup (interpret everything immediately) vs peak throughput (spend time compiling optimised code). The tiered approach gives you both — quick start with progressive optimisation for hot code."
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "autoScoredTotal": 10,
+    "autoScoredSections": ["section-a"],
+    "selfGradedSections": ["section-b", "section-c"],
+    "tiers": [
+      { "min": 90, "label": "🟢 Solid V8 internals foundation — ready for advanced topics" },
+      { "min": 70, "label": "🟡 Good understanding with some gaps — review specific areas" },
+      { "min": 0, "label": "🔴 Revisit the V8 internals fundamentals before moving forward" }
+    ]
+  }
+}

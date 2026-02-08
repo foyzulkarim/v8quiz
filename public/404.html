@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      const path = location.pathname + location.search + location.hash;
+      sessionStorage.setItem("gh-path", path);
+      const segments = location.pathname.split("/");
+      segments.pop();
+      const base = segments.join("/") || "/";
+      const target = base.endsWith("/") ? base : base + "/";
+      location.replace(target);
+    </script>
+  </head>
+  <body></body>
+</html>

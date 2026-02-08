@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import quizData from "@/data/quizData.json";
+import quizData from "@/data/data.json";
 import type { QuizData } from "@/types/quiz";
 
 const Index = () => {
