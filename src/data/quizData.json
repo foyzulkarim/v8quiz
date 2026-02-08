@@ -3,7 +3,7 @@
     "title": "V8 Internals Assessment",
     "subtitle": "Node.js Performance Engineering — Modules 1.1, 1.2 & 1.3",
     "estimatedTime": "45–60 minutes",
-    "description": "Test your knowledge of V8's compilation pipeline, hidden classes, inline caching, and memory model."
+    "description": "Test your knowledge of V8's compilation pipeline, hidden classes, inline caching, and memory model. More topics coming soon!"
   },
   "sections": [
     {
