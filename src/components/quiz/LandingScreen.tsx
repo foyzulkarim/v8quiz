@@ -68,11 +68,11 @@ export function LandingScreen({ meta, onStart }: LandingScreenProps) {
       <footer className="border-t border-border py-6 px-4">
         <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-muted-foreground text-sm">
-            Created by <span className="text-foreground">{"{{AUTHOR_NAME}}"}</span>
+            Created by <span className="text-foreground">{"{{Foyzul Karim}}"}</span>
           </p>
           <div className="flex items-center gap-4">
             <a
-              href="{{YOUTUBE_URL}}"
+              href="https://www.youtube.com/@Foyzul"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors"
@@ -81,7 +81,7 @@ export function LandingScreen({ meta, onStart }: LandingScreenProps) {
               <Youtube className="w-5 h-5" />
             </a>
             <a
-              href="{{LINKEDIN_URL}}"
+              href="https://www.linkedin.com/in/foyzul"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors"
@@ -90,7 +90,7 @@ export function LandingScreen({ meta, onStart }: LandingScreenProps) {
               <Linkedin className="w-5 h-5" />
             </a>
             <a
-              href="{{SUBSTACK_URL}}"
+              href="https://foyzul.substack.com"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors"
