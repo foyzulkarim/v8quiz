@@ -1,13 +1,88 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { useQuiz } from "@/hooks/useQuiz";
+import { LandingScreen } from "@/components/quiz/LandingScreen";
+import { QuizScreen } from "@/components/quiz/QuizScreen";
+import { ResultsScreen } from "@/components/quiz/ResultsScreen";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import quizData from "@/data/quizData.json";
+import type { QuizData } from "@/types/quiz";
 
 const Index = () => {
+  const quiz = useQuiz(quizData as QuizData);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  const handleSubmitClick = () => {
+    const unansweredCount = quiz.getUnansweredCount();
+    if (unansweredCount > 0) {
+      setShowConfirmDialog(true);
+    } else {
+      quiz.submitQuiz();
+    }
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowConfirmDialog(false);
+    quiz.submitQuiz();
+  };
+
+  // Landing screen
+  if (!quiz.started) {
+    return <LandingScreen meta={quiz.meta} onStart={quiz.startQuiz} />;
+  }
+
+  // Results screen
+  if (quiz.state.submitted) {
+    return (
+      <ResultsScreen
+        questions={quiz.flattenedQuestions}
+        answers={quiz.state.answers}
+        selfGrades={quiz.state.selfGrades}
+        onSelfGrade={quiz.setSelfGrade}
+        scoringTiers={quiz.scoringTiers}
+        onRetake={quiz.resetQuiz}
+      />
+    );
+  }
+
+  // Quiz screen
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <>
+      <QuizScreen
+        questions={quiz.flattenedQuestions}
+        currentIndex={quiz.state.currentQuestionIndex}
+        answers={quiz.state.answers}
+        onAnswerChange={quiz.setAnswer}
+        onNavigate={quiz.navigateToQuestion}
+        onSubmit={handleSubmitClick}
+      />
+      
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Quiz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have {quiz.getUnansweredCount()} unanswered question
+              {quiz.getUnansweredCount() === 1 ? "" : "s"}. Submit anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit}>
+              Submit Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
