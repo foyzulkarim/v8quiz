@@ -24,7 +24,15 @@ export function LandingScreen({ meta, onStart }: LandingScreenProps) {
               {meta.title}
             </h1>
             <p className="text-lg text-primary font-medium">
+              <a
+              href="https://foyzul.substack.com/p/when-numbers-secretly-become-objects"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-primary transition-colors"
+              aria-label="SubStack"
+            >
               {meta.subtitle}
+            </a>
             </p>
           </div>
           
