@@ -1,0 +1,250 @@
+{
+  "meta": {
+    "title": "V8 Internals Assessment",
+    "subtitle": "Node.js Performance Engineering — Modules 1.1, 1.2 & 1.3",
+    "estimatedTime": "45–60 minutes",
+    "description": "Test your knowledge of V8's compilation pipeline, hidden classes, inline caching, and memory model."
+  },
+  "sections": [
+    {
+      "id": "section-a",
+      "title": "Section A: Multiple Choice",
+      "instruction": "Choose the single best answer for each question.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "text": "A JavaScript function is called for the first time. Which V8 component executes it?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "TurboFan" },
+            { "key": "b", "text": "Sparkplug" },
+            { "key": "c", "text": "Ignition" },
+            { "key": "d", "text": "Maglev" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "V8 always starts by parsing source code into an AST, then **Ignition** compiles it to bytecode. First execution is always interpreted by Ignition. TurboFan and Maglev only kick in after the function has been called enough times to be considered \"hot.\""
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "text": "What is the primary purpose of hidden classes in V8?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "To implement JavaScript class inheritance" },
+            { "key": "b", "text": "To enable fast property access through shape-based optimization" },
+            { "key": "c", "text": "To hide private class fields from other code" },
+            { "key": "d", "text": "To compress object memory usage" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "Hidden classes (also called \"maps\" or \"shapes\") allow V8 to optimize property access. Objects with the same hidden class share a structure, enabling V8 to generate efficient machine code that accesses properties at fixed offsets rather than doing dictionary lookups."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "text": "What happens when you add a property to an object in a different order than another object of the same \"type\"?",
+          "codeSnippet": "const a = {}; a.x = 1; a.y = 2;\nconst b = {}; b.y = 2; b.x = 1;",
+          "options": [
+            { "key": "a", "text": "Both objects share the same hidden class" },
+            { "key": "b", "text": "Each object gets a different hidden class" },
+            { "key": "c", "text": "V8 throws a runtime error" },
+            { "key": "d", "text": "The second object inherits from the first" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "Property addition order matters for hidden classes. Even though `a` and `b` end up with the same properties, they were added in different orders, so V8 creates **different hidden class chains** for each. This is why consistent property initialization order is a performance best practice."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "text": "What does inline caching (IC) optimize in V8?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "Function call overhead" },
+            { "key": "b", "text": "Memory allocation speed" },
+            { "key": "c", "text": "Property access and method calls by caching lookup results" },
+            { "key": "d", "text": "Garbage collection pauses" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "Inline caching stores the result of property lookups directly at the call site. When the same hidden class is seen again, V8 can skip the lookup entirely and use the cached offset. This is one of the most important optimizations in dynamic language VMs."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "text": "What is a \"megamorphic\" inline cache state?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "An IC that has seen exactly one hidden class" },
+            { "key": "b", "text": "An IC that has seen 2-4 different hidden classes" },
+            { "key": "c", "text": "An IC that has seen too many hidden classes and given up caching" },
+            { "key": "d", "text": "An IC used for prototype chain lookups" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "IC states progress from **monomorphic** (one shape) → **polymorphic** (2-4 shapes) → **megamorphic** (too many). Once megamorphic, the IC stops caching and falls back to slower generic lookups. This is why type consistency matters for performance."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "text": "Which of the following will likely cause TurboFan to deoptimize a function?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "Calling the function many times with consistent types" },
+            { "key": "b", "text": "Passing a string to a function that previously only received numbers" },
+            { "key": "c", "text": "Using const instead of let" },
+            { "key": "d", "text": "Defining the function with an arrow expression" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "TurboFan optimizes based on type feedback. If it compiles a function assuming number inputs, and you later pass a string, the assumption is violated. V8 must **deoptimize** — throwing away the optimized code and falling back to interpreted bytecode."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "text": "What is the role of Sparkplug in V8's compilation pipeline?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "It's V8's garbage collector" },
+            { "key": "b", "text": "It's a fast non-optimizing compiler that produces baseline machine code" },
+            { "key": "c", "text": "It's the main optimizing compiler" },
+            { "key": "d", "text": "It handles WebAssembly compilation" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "**Sparkplug** is V8's baseline compiler, sitting between Ignition (interpreter) and TurboFan (optimizing compiler). It quickly generates machine code without expensive optimizations, reducing the time functions spend in the slow interpreter while TurboFan prepares optimized code."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "text": "How does V8 store small integers (SMIs)?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "As heap-allocated Number objects" },
+            { "key": "b", "text": "As tagged pointers with the value encoded directly in the pointer" },
+            { "key": "c", "text": "As strings that are parsed on each use" },
+            { "key": "d", "text": "In a separate integer memory pool" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "Small integers (**SMIs**) are stored directly in the pointer itself using pointer tagging. The least significant bit indicates whether it's a pointer or a SMI. This avoids heap allocation for common small numbers, making integer math very fast."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "text": "What happens to an object's hidden class when you delete a property?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "Nothing, hidden classes are immutable" },
+            { "key": "b", "text": "The object transitions to a new hidden class" },
+            { "key": "c", "text": "The object may fall back to dictionary mode (slow properties)" },
+            { "key": "d", "text": "V8 throws a TypeError" }
+          ],
+          "correctAnswer": "c",
+          "explanation": "Deleting properties is a **de-optimization trigger**. V8 may transition the object to \"dictionary mode\" where properties are stored in a hash table instead of at fixed offsets. This makes property access slower but handles dynamic shapes better."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "text": "What does the --trace-opt flag show when running Node.js?",
+          "codeSnippet": null,
+          "options": [
+            { "key": "a", "text": "Memory allocation traces" },
+            { "key": "b", "text": "Functions being optimized by TurboFan" },
+            { "key": "c", "text": "Network request timings" },
+            { "key": "d", "text": "File system operations" }
+          ],
+          "correctAnswer": "b",
+          "explanation": "The `--trace-opt` flag logs when V8's optimizing compilers (TurboFan/Maglev) compile functions. Combined with `--trace-deopt`, it helps identify optimization/deoptimization patterns in your code."
+        }
+      ]
+    },
+    {
+      "id": "section-b",
+      "title": "Section B: Code Analysis",
+      "instruction": "For each code snippet, explain what V8 is doing internally. Show your reasoning.",
+      "questions": [
+        {
+          "id": "q11",
+          "type": "code_analysis",
+          "text": "Analyze the following code. Will both functions be optimized by TurboFan equally well? Explain why or why not.",
+          "codeSnippet": "function addClean(a, b) {\n  return a + b;\n}\n\nfunction addMessy(a, b) {\n  return a + b;\n}\n\n// Hot loop — thousands of calls\nfor (let i = 0; i < 10000; i++) {\n  addClean(i, i + 1);\n}\n\nfor (let i = 0; i < 10000; i++) {\n  if (i === 9999) {\n    addMessy(i, \"surprise\");\n  } else {\n    addMessy(i, i + 1);\n  }\n}",
+          "modelAnswer": "**`addClean`** will be optimized well by TurboFan. It receives consistent types (numbers) across all 10,000 calls, so V8 collects stable type feedback and generates specialized integer addition code.\n\n**`addMessy`** will likely be optimized *and then deoptimized*. For the first 9,999 calls, V8 sees numbers and may optimize. On the last call, it receives a string as the second argument. This violates the type assumption, triggering a deoptimization bailout. The function may be re-optimized with a more generic (slower) version, or left in interpreted mode.",
+          "explanation": "The key concept here is **type stability**. TurboFan optimizes based on type feedback collected during interpretation. Consistent types → confident optimization. Mixed types → deoptimization or less aggressive compilation."
+        },
+        {
+          "id": "q12",
+          "type": "code_analysis",
+          "text": "Explain what hidden class transitions occur in this code and why it might be problematic for performance.",
+          "codeSnippet": "function Point(x, y) {\n  this.x = x;\n  this.y = y;\n}\n\nconst p1 = new Point(1, 2);\nconst p2 = new Point(3, 4);\n\np1.z = 5;  // Add extra property\n\nfunction distance(point) {\n  return Math.sqrt(point.x ** 2 + point.y ** 2);\n}",
+          "modelAnswer": "Initially, both `p1` and `p2` share the same hidden class after construction (let's call it `HC_Point_xy`).\n\nWhen we add `p1.z = 5`, `p1` transitions to a new hidden class (`HC_Point_xyz`), while `p2` stays at `HC_Point_xy`.\n\nNow the `distance` function receives objects with **different hidden classes**. If called with both `p1` and `p2`, the inline cache for `point.x` and `point.y` becomes **polymorphic** instead of monomorphic. This means V8 must check which hidden class it's dealing with on each call, which is slower than the monomorphic case.",
+          "explanation": "Adding properties after construction causes **hidden class divergence**. Objects that should be treated identically by V8 now have different shapes, reducing IC efficiency."
+        },
+        {
+          "id": "q13",
+          "type": "code_analysis",
+          "text": "Will V8 be able to optimize property access in this function? Explain the inline caching behavior.",
+          "codeSnippet": "function processItems(items) {\n  let total = 0;\n  for (const item of items) {\n    total += item.value;\n  }\n  return total;\n}\n\n// Called with different object shapes\nprocessItems([{ value: 1 }, { value: 2 }]);\nprocessItems([{ value: 1, name: 'a' }, { value: 2, name: 'b' }]);\nprocessItems([{ id: 1, value: 1 }, { id: 2, value: 2 }]);",
+          "modelAnswer": "The IC for `item.value` will **degrade** through the states:\n\n1. First call: Monomorphic (objects with shape `{value}`)\n2. Second call: Polymorphic (now sees `{value, name}` too)\n3. Third call: Polymorphic or megamorphic (now sees `{id, value}` too)\n\nWith 3+ different shapes, the IC may become megamorphic, meaning V8 gives up on caching and does a full property lookup each time. This is significantly slower than the monomorphic case.\n\n**Best practice**: Use consistent object shapes. If all objects had the same properties (even with `undefined` values), the IC would stay monomorphic.",
+          "explanation": "This demonstrates how **shape polymorphism** affects inline caching. Real-world code often accidentally creates this pattern when processing heterogeneous data."
+        },
+        {
+          "id": "q14",
+          "type": "code_analysis",
+          "text": "Analyze the memory representation of these values and explain which ones are heap-allocated.",
+          "codeSnippet": "const a = 42;\nconst b = 42.5;\nconst c = 9007199254740993; // Larger than 2^31-1\nconst d = { x: 1 };\nconst e = 'hello';",
+          "modelAnswer": "- **`a = 42`**: This is a **SMI (Small Integer)**. It's stored as a tagged pointer with the value encoded directly — **no heap allocation**.\n\n- **`b = 42.5`**: Floating point numbers are stored as **HeapNumbers** — they require **heap allocation**.\n\n- **`c = 9007199254740993`**: This number exceeds the SMI range (typically 31 bits on 64-bit systems). It's stored as a **HeapNumber** — **heap allocated**.\n\n- **`d = { x: 1 }`**: Objects are always **heap allocated**. The object itself, its hidden class, and its properties all live on the heap.\n\n- **`e = 'hello'`**: Strings are **heap allocated** as String objects. V8 may intern short strings for deduplication, but they still live on the heap.",
+          "explanation": "Understanding V8's value representation helps predict memory usage and GC pressure. SMIs are the most efficient; everything else requires heap allocation and eventual garbage collection."
+        },
+        {
+          "id": "q15",
+          "type": "code_analysis",
+          "text": "This code has a subtle performance problem. Identify it and explain how V8's internals are affected.",
+          "codeSnippet": "class Vector {\n  constructor(x, y) {\n    this.x = x;\n    this.y = y;\n  }\n  \n  add(other) {\n    return new Vector(this.x + other.x, this.y + other.y);\n  }\n}\n\nfunction compute(useZ) {\n  const v = new Vector(1, 2);\n  if (useZ) {\n    v.z = 0;  // Sometimes add z\n  }\n  return v;\n}\n\n// Called many times with different flags\nfor (let i = 0; i < 1000; i++) {\n  compute(i % 2 === 0);\n}",
+          "modelAnswer": "The `compute` function conditionally adds a `z` property, causing **hidden class instability**:\n\n- When `useZ` is true: Vector transitions from `{x, y}` to `{x, y, z}`\n- When `useZ` is false: Vector stays at `{x, y}`\n\nThis creates two different hidden classes for objects that logically represent the same concept. If these vectors are later used together (e.g., in an array or passed to the same function), the inline caches become polymorphic.\n\n**The fix**: Always initialize `z` in the constructor, even if it's `undefined` or `0`. This ensures all Vector instances share the same hidden class:\n\n```javascript\nconstructor(x, y, z = undefined) {\n  this.x = x;\n  this.y = y;\n  this.z = z;\n}\n```",
+          "explanation": "Conditional property addition is a common pattern that accidentally creates hidden class polymorphism. The fix is to always initialize all properties in the constructor."
+        }
+      ]
+    },
+    {
+      "id": "section-c",
+      "title": "Section C: Short Answer",
+      "instruction": "Answer in 2–5 sentences each.",
+      "questions": [
+        {
+          "id": "q16",
+          "type": "short_answer",
+          "text": "Explain the relationship between On-Stack Replacement (OSR) and V8's tiered compilation. Why is OSR necessary — why can't V8 simply wait until the next function call to use optimized code?",
+          "codeSnippet": null,
+          "modelAnswer": "OSR allows V8 to switch from interpreted bytecode to optimized machine code **while a function is still running** — specifically, mid-loop.\n\nWithout OSR, a long-running loop would have to complete entirely in slow interpreted mode before the optimized code could be used on the next call. This would be terrible for performance in real-world scenarios where a function might loop millions of times on its first invocation.\n\nOSR works by identifying loop back-edges (where the loop jumps back to its start), inserting checkpoints, and transferring execution state from the interpreter stack frame to an optimized stack frame.",
+          "explanation": "OSR is essential for tiered compilation to be effective. It ensures that optimization benefits apply as soon as possible, not just on subsequent calls."
+        },
+        {
+          "id": "q17",
+          "type": "short_answer",
+          "text": "What is the difference between V8's \"fast properties\" and \"slow properties\" (dictionary mode)? When does V8 switch between them?",
+          "codeSnippet": null,
+          "modelAnswer": "**Fast properties** are stored at fixed offsets within the object, determined by the hidden class. Property access is a simple offset calculation — very fast.\n\n**Slow properties** (dictionary mode) use a hash table. Property access requires a hash lookup — slower, but more flexible for dynamic shapes.\n\nV8 switches to dictionary mode when:\n- Too many properties are added (exceeding inline storage)\n- Properties are deleted\n- Non-standard property attributes are used (e.g., defineProperty with non-default descriptors)\n- The object is used as a dictionary explicitly (e.g., `Object.create(null)` with many dynamic keys)",
+          "explanation": "Understanding this distinction helps explain why some patterns (like using delete or adding many dynamic properties) cause performance degradation."
+        },
+        {
+          "id": "q18",
+          "type": "short_answer",
+          "text": "How does V8's generational garbage collector work? Explain the concepts of the \"nursery\" (young generation) and \"old generation\".",
+          "codeSnippet": null,
+          "modelAnswer": "V8 uses a **generational** garbage collector based on the observation that most objects die young.\n\n**Young generation (nursery)**: Small, fixed-size heap area where new objects are allocated. Collected frequently using a fast **Scavenge** algorithm (semi-space copying). Objects that survive a few collections are \"promoted\" to the old generation.\n\n**Old generation**: Larger heap area for long-lived objects. Collected less frequently using **Mark-Sweep** and **Mark-Compact** algorithms. These are more expensive but run less often.\n\nThis design optimizes for the common case: quickly reclaiming short-lived temporary objects while minimizing pause times for the full heap.",
+          "explanation": "Generational GC is key to V8's performance. Understanding it helps explain why allocation patterns (many short-lived vs. fewer long-lived objects) affect pause times."
+        },
+        {
+          "id": "q19",
+          "type": "short_answer",
+          "text": "What is Maglev and where does it fit in V8's compilation tier? Why was it added when TurboFan already exists?",
+          "codeSnippet": null,
+          "modelAnswer": "**Maglev** is V8's mid-tier optimizing compiler, sitting between Sparkplug (baseline) and TurboFan (full optimization).\n\nTurboFan produces highly optimized code but is slow to compile. For functions that are \"warm\" but not \"hot,\" waiting for TurboFan is wasteful — they'd run faster with *some* optimization, even if not maximal.\n\nMaglev compiles faster than TurboFan while producing better code than Sparkplug. It uses a simpler SSA-based IR and fewer optimization passes. This reduces the time functions spend in slow Sparkplug code while TurboFan prepares, improving overall throughput.\n\nThe tier progression is now: Ignition → Sparkplug → Maglev → TurboFan.",
+          "explanation": "Maglev fills a gap in V8's compilation pipeline, reducing the \"warm code\" problem where functions are too hot for baseline but not hot enough to justify TurboFan's compile time."
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "tiers": [
+      { "min": 90, "label": "🟢 Solid V8 internals foundation — ready for advanced topics" },
+      { "min": 70, "label": "🟡 Good understanding with some gaps — review specific areas" },
+      { "min": 0, "label": "🔴 Revisit the V8 internals fundamentals before moving forward" }
+    ]
+  }
+}
