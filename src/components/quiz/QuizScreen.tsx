@@ -36,6 +36,13 @@ export function QuizScreen({
   
   const questionIds = questions.map((q) => q.question.id);
   
+  // Check if current question has a valid answer
+  const currentAnswer = answers[currentQuestion.question.id];
+  const isMCQ = currentQuestion.question.type === "mcq";
+  const hasValidAnswer = isMCQ
+    ? currentAnswer && currentAnswer.trim() !== ""
+    : currentAnswer && currentAnswer.trim().length >= 10;
+  
   const handlePrevious = () => {
     if (!isFirst) {
       onNavigate(currentIndex - 1);
@@ -111,12 +118,12 @@ export function QuizScreen({
             </Button>
             
             {isLast ? (
-              <Button onClick={onSubmit} className="gap-2">
+              <Button onClick={onSubmit} disabled={!hasValidAnswer} className="gap-2">
                 Submit Quiz
                 <Send className="w-4 h-4" />
               </Button>
             ) : (
-              <Button onClick={handleNext} className="gap-2">
+              <Button onClick={handleNext} disabled={!hasValidAnswer} className="gap-2">
                 Next
                 <ChevronRight className="w-4 h-4" />
               </Button>
