@@ -31,12 +31,28 @@ export function ResultsScreen({
     (q) => q.question.type === "mcq" && q.sectionId === "section-a"
   );
   
-  const correctCount = mcqQuestions.filter((q) => {
+  const mcqCorrectCount = mcqQuestions.filter((q) => {
     const question = q.question as MCQQuestion;
     return answers[question.id] === question.correctAnswer;
   }).length;
   
-  const scorePercentage = (correctCount / mcqQuestions.length) * 100;
+  // Calculate self-graded questions score
+  const selfGradedQuestions = questions.filter(
+    (q) => q.question.type === "code_analysis" || q.question.type === "short_answer"
+  );
+  
+  const selfGradedCorrectCount = selfGradedQuestions.filter(
+    (q) => selfGrades[q.question.id] === "correct"
+  ).length;
+  
+  const selfGradedPartialCount = selfGradedQuestions.filter(
+    (q) => selfGrades[q.question.id] === "partial"
+  ).length;
+  
+  // Total score: MCQ correct + self-graded correct + 0.5 * partial
+  const totalCorrect = mcqCorrectCount + selfGradedCorrectCount + (selfGradedPartialCount * 0.5);
+  const totalQuestions = mcqQuestions.length + selfGradedQuestions.length;
+  const scorePercentage = (totalCorrect / totalQuestions) * 100;
   
   // Get tier
   const tier = scoringTiers.find((t) => scorePercentage >= t.min) || scoringTiers[scoringTiers.length - 1];
@@ -48,11 +64,25 @@ export function ResultsScreen({
         <div className="max-w-3xl mx-auto text-center space-y-6">
           <h1 className="text-3xl font-bold text-foreground">Quiz Complete!</h1>
           
-          <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-8">
+              <div className="text-center">
+                <p className="text-4xl font-bold text-primary">
+                  {mcqCorrectCount} / {mcqQuestions.length}
+                </p>
+                <p className="text-sm text-muted-foreground">MCQ (Auto-scored)</p>
+              </div>
+              <div className="text-center">
+                <p className="text-4xl font-bold text-primary">
+                  {selfGradedCorrectCount + selfGradedPartialCount * 0.5} / {selfGradedQuestions.length}
+                </p>
+                <p className="text-sm text-muted-foreground">Self-graded</p>
+              </div>
+            </div>
             <p className="text-5xl font-bold text-primary">
-              {correctCount} / {mcqQuestions.length}
+              {Math.round(scorePercentage)}%
             </p>
-            <p className="text-muted-foreground">Multiple Choice Score</p>
+            <p className="text-muted-foreground">Overall Score</p>
           </div>
           
           <div className="inline-block px-4 py-2 rounded-lg bg-muted text-lg">
